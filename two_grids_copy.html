@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <title>Grid!</title>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.css"
+        crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.css" crossorigin="anonymous">
+
+
+    <style>
+        .landmark-label-js {
+            display: none; 
+        }
+
+        #navheader {
+            height: 10%;
+        }
+
+        .col-4 {
+            padding-left: 30px;
+            max-width: 200px; 
+        }
+       
+        #square-box-container { 
+            position: relative; 
+            float: left; 
+            padding-left: 30px; 
+        }
+
+        .square-box {
+            /* min-width: 200px;  */
+            width: 400px;
+            height: 400px;
+            padding-top: 20%;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+
+        .landmark-grid-container {
+            min-width: 200px;
+            min-height: 200px; 
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 10%;
+            left: 400px;
+            background-color: #99999999;
+        }
+
+        #square-box-2 {
+            opacity: 50%;
+            /* top: -100%; */
+        } 
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <!-- Navigation bar -->
+        <div id="navheader" class="p-5 text-center bg-light">
+            <h1 class="mb-3">grid_hands</h1>
+            <a class="btn btn-primary" href="/practice" role="button">Pratice Sign</a>
+            <a class="btn btn-primary" href="/learn" role="button">Learn Sign</a>
+            <a class="btn btn-primary" href="/" role="button">Home</a>
+        </div>
+    </header>
+
+    <!-- Select a sign to view on the grid-->
+    <div class="col-4">
+        <!-- <label for="exampleDataList" class="form-label">Choose a letter to practice</label> -->
+        <input onchange="get_sign()" class="form-control" list="datalistOptions" id="sign_data"
+            placeholder="Chose a sign">
+        <datalist id="datalistOptions">
+            <option value="A">
+            <option value="B">
+            <option value="C">
+            <option value="D">
+            <option value="E">
+            <option value="F">
+            <option value="G">
+            <option value="H">
+            <option value="I">
+            <option value="J">
+            <option value="K">
+            <option value="L">
+            <option value="M">
+            <option value="N">
+            <option value="O">
+            <option value="P">
+            <option value="Q">
+            <option value="R">
+            <option value="S">
+            <option value="T">
+            <option value="U">
+            <option value="V">
+            <option value="W">
+            <option value="X">
+            <option value="Y">
+            <option value="Z">
+        </datalist>
+    </div>
+
+    <!-- Take in input from the camera and display on the grid-->
+    <video hidden class="input_video"></video>
+    <canvas hidden class="output_canvas" width="1280px" height="720px"></canvas>
+    <div id="square-box-container">
+        <div class="square-box" id="square-box-1">
+            <!-- static sign -->
+            <div class="landmark-grid-container" id="landmark-grid-container-1"></div>
+        </div>
+        <div class="square-box" id="square-box-2">
+            <!-- moving sign -->
+            <div class="landmark-grid-container" id="landmark-grid-container-2"></div>
+        </div>
+    </div>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.js"
+        crossorigin="anonymous"></script>
+
+    <script>
+        let static_sign = [];
+        let landplaceholder = []
+        let frame_count = 0  // helps for the moving signs
+
+        function get_sign() {
+            let sign = document.getElementById("sign_data").value
+            // console.log(sign)
+            axios.post('/grid', { 'example_sign': sign }).then(
+                (response) => {
+                    // console.log(response)  // take prediction recieved and show it on screen
+                    landplaceholder = response.data["example_datapoints"]
+                    console.log(response.data["moving"])
+                    moving = response.data["moving"]
+                    trace_tip = response.data["trace_tip"]
+                    console.log(trace_tip)
+                    // console.log(landplaceholder)
+                    // prediction = response.data.prediction;
+                    // console.log(prediction)
+
+                },
+                (error) => {
+                    console.log(error)  // if error occurs during prediction, notification pops up
+                }
+
+            );
+        }
+
+        const videoElement = document.getElementsByClassName("input_video")[0];
+        const canvasElement = document.getElementsByClassName("output_canvas")[0];
+        const canvasCtx = canvasElement.getContext("2d");
+
+        const landmarkContainer = document.getElementsByClassName(
+            "landmark-grid-container"
+        )[0];
+
+        const landmarkContainer2 = document.getElementsByClassName("landmark-grid-container")[1];
+
+         
+        const grid2 = new LandmarkGrid(landmarkContainer2, {  // this grid is for moving signs
+            connectionColor: 0xcccccc,
+            definedColors: [
+                { name: "Right", value: 0x00ffff },  // sets hand color
+                { name: "Left", value: 0x00ffff }  // sets hand color
+
+            ],
+            range: 0.2,
+            fitToGrid: false,
+            labelPrefix: "", 
+            // labelSuffix: "m",
+            landmarkSize: 2,
+            numCellsPerAxis: 4,
+            showHidden: false,
+            centered: false,
+        });
+
+        const grid = new LandmarkGrid(landmarkContainer, { // this grid is for static signs
+            connectionColor: 0xcccccc,
+            definedColors: [
+                { name: "Left", value: 0xffa500 },  // sets hand color
+                { name: "Right", value: 0xffa500 }  // sets hand color
+
+            ],
+            range: 0.2,
+            fitToGrid: false,
+            labelPrefix: "",
+            // labelSuffix: "m",
+            landmarkSize: 2,
+            numCellsPerAxis: 4,
+            showHidden: false,
+            centered: false,
+        });
+
+        // this section is to handle when you rotate the canvas manually so that both rotate in sync 
+        // 
+        
+        let gridCanvas = document.getElementsByClassName("viewer-widget-js") 
+        let moving = 0
+        let secondCanvas = gridCanvas[1].children[0]
+        let ifPaused = 0
+
+        // console.log(secondCanvas.onmousedown)
+        secondCanvas.onmousedown = (event) => {
+            event.preventDefault();
+            const speed = grid.config.rotationSpeed;
+            const origRotation = grid.rotation;
+            grid.rotationSpeed = 0;  
+            grid2.rotationSpeed = 0;           
+         
+            const mouseMove = (
+                (e) => {
+                    
+                    e.preventDefault();
+                    rotation = 2 * Math.PI * (event.offsetX - e.offsetX) / secondCanvas.width;
+                    const distance = Math.hypot(grid.camera.position.x, grid.camera.position.z);
+                    
+                    grid.rotation = origRotation + rotation;
+                    grid.camera.position.x = Math.sin(this.rotation) * distance;
+                    grid.camera.position.z = Math.cos(this.rotation) * distance;
+                    grid.camera.lookAt(0);
+
+                    grid2.rotation = origRotation + rotation;
+                    grid2.camera.position.x = Math.sin(this.rotation) * distance;
+                    grid2.camera.position.z = Math.cos(this.rotation) * distance;
+                    grid2.camera.lookAt(0);
+
+                    grid.config.isRotating = true
+                    grid2.config.isRotating = true
+
+                    console.log(grid2)
+
+
+                }
+            );
+
+            const mouseUp = (
+                
+                (e) => {
+                    
+                    e.preventDefault();
+                    secondCanvas.removeEventListener('mousemove', mouseMove);
+                    grid.config.rotationSpeed = speed;
+                    grid2.config.rotationSpeed = speed;
+                    secondCanvas.removeEventListener('mouseup', mouseUp);
+                    if (ifPaused == 1) {
+                        grid.config.isRotating = false
+                        grid2.config.isRotating = false
+
+                    }
+                }
+            );
+            
+            secondCanvas.addEventListener('mousemove', mouseMove);
+            // document.addEventListener('mouseup', mouseUp);
+            secondCanvas.addEventListener('mouseup', mouseUp);
+    }
+        // this section is to handle the specific issue of only one grid pausing when the pause button is clicked
+        // note: it was occuring because the grids were overlapped entirely, thus causing the underneath pause button to be unclickable
+
+        let pauseButton = document.getElementsByClassName("controls");  // this is the pause button on the grid
+        let secondPause = pauseButton[1];  // this is the pause button specifically for the grid on top
+        
+        secondPause.onclick = (event) => {  // when the pause button on top is clicked
+            if (grid2.config.isRotating) {  // this is to stop the grids from rotating (for some reason the url for the images are swapped, this correct)
+                pauseButton[0].src = "https://fonts.gstatic.com/s/i/googlematerialicons/play_arrow/v14/white-24dp/1x/gm_play_arrow_white_24dp.png";  // switches from the two rectangles to the triange for the top pause button
+                grid2.config.isRotating = false;  // stops the top grid from rotating
+                pauseButton[1].src = "https://fonts.gstatic.com/s/i/googlematerialicons/play_arrow/v14/white-24dp/1x/gm_play_arrow_white_24dp.png"; // switches from the two rectangles to the triange for the bottom pause button
+                grid.config.isRotating = false; // stops the bottom grid from rotating
+                ifPaused = 1
+            }
+            else {
+                pauseButton[0].src = "https://fonts.gstatic.com/s/i/googlematerialicons/pause/v14/white-24dp/1x/gm_pause_white_24dp.png";
+                grid2.config.isRotating = true;
+                pauseButton[1].src = "https://fonts.gstatic.com/s/i/googlematerialicons/pause/v14/white-24dp/1x/gm_pause_white_24dp.png";
+                grid.config.isRotating = true;
+                ifPaused = 0
+            }
+        }
+
+        // end pause button section 
+        
+        let traceList = [];
+        function onResults(results) {
+
+            // console.log(grid.config.isRotating)
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image,
+                0,
+                0,
+                canvasElement.width,
+                canvasElement.height
+            );
+
+        
+            if (landplaceholder?.length != 0) {
+
+                if (moving == 1) {  // if sign j or z is selected
+                    // console.log(landplaceholder.length)
+                    
+                    static_sign = [landplaceholder.slice(frame_count, frame_count + 21)] // this takes a single frame's datapoints of the 40-frame moving sign
+                    // console.log(static_sign[0][0])  // NOTE: i believe this is the index tip, but should probably check to make sure + devise a better way to find tips than just hard-coding it
+                    
+                    if (trace_tip == 'INDEX_TIP') {
+
+                        traceList.push(static_sign[0][8])  // a collection of the datapoints at which index tip is at
+                        // console.log('tracelist', traceList)
+                        static_sign[0] = [...static_sign[0], ...traceList] 
+                    }
+
+                    if (trace_tip == 'PINKY_TIP') {
+                        traceList.push(static_sign[0][20])  // a collection of the datapoints at which index tip is at
+                        // console.log('tracelist', traceList)
+                        static_sign[0] = [...static_sign[0], ...traceList] 
+                    }
+
+                    const static_landmarks = static_sign.reduce(
+                        (prev, current) => [...prev, ...current],
+                        []
+                    );
+
+
+                    console.log(static_sign)
+                    const colors = [];
+                    let connections = [];
+                    for (let loop = 0; loop < static_sign.length; ++loop) {
+                        const offset = loop * HAND_CONNECTIONS.length;
+                        const offsetConnections = HAND_CONNECTIONS.map((connection) => [
+                            connection[0] + offset,
+                            connection[1] + offset,
+                        ]);
+                        connections = connections.concat(offsetConnections);
+                        const classification = results.multiHandedness[loop];
+                        // console.log(results.multiHandedness[loop]);
+                        colors.push({
+                            list: offsetConnections.map((unused, i) => i + offset),
+                            // color: loop == 0 ? "Left" : "Right",  // if loop is 0, do left (left is one color), if not then do right (another color)
+                            // this is to set the static hand and the live hand to be two different colors
+                            color: "Left"
+                        });
+                    }
+                    grid.updateLandmarks(static_landmarks, connections, colors);
+                    frame_count += 21
+                    
+                    if (frame_count >= 840) {
+                        frame_count = 0
+                        traceList = []
+                    }                
+                }
+
+                else {  // if any other sign is selected
+                    // console.log(landplaceholder.length)
+                    
+                    static_sign = [landplaceholder] // this is the datapoints for the static sign the user has selected to view
+                    console.log('landplaceholder', landplaceholder)
+
+                    const static_landmarks = static_sign.reduce(
+                        (prev, current) => [...prev, ...current],
+                        []
+                    );
+
+                    const colors = [];
+                    let connections = [];
+                    for (let loop = 0; loop < static_sign.length; ++loop) {
+                        const offset = loop * HAND_CONNECTIONS.length;
+                        const offsetConnections = HAND_CONNECTIONS.map((connection) => [
+                            connection[0] + offset,
+                            connection[1] + offset,
+                        ]);
+                        connections = connections.concat(offsetConnections);
+                        const classification = results.multiHandedness[loop];
+                        console.log(results.multiHandedness[loop]);
+                        colors.push({
+                            list: offsetConnections.map((unused, i) => i + offset),
+                            // color: loop == 0 ? "Left" : "Right",  // if loop is 0, do left (left is one color), if not then do right (another color)
+                            // this is to set the static hand and the live hand to be two different colors
+                            color: "Left"
+                        });
+                    }
+                    grid.updateLandmarks(static_landmarks, connections, colors);
+        
+                }
+            
+            }
+           
+            else {
+                grid.updateLandmarks([]);
+            }
+
+            if (results.multiHandWorldLandmarks) {
+                // if (results.multiHandWorldLandmarks.length > 0)
+                    // console.log(results.multiHandWorldLandmarks);
+                // We only get to call updateLandmarks once, so we need to cook the data to
+                // fit. The landmarks just merge, but the connections need to be offset.
+                const landmarks = results.multiHandWorldLandmarks.reduce(
+                    (prev, current) => [...prev, ...current],
+                    []
+                );
+                const colors = [];
+                let connections = [];
+                for (
+                    let loop = 0;
+                    loop < results.multiHandWorldLandmarks.length;
+                    ++loop
+                ) {
+                    const offset = loop * HAND_CONNECTIONS.length;
+                    const offsetConnections = HAND_CONNECTIONS.map((connection) => [
+                        connection[0] + offset,
+                        connection[1] + offset,
+                    ]);
+                    connections = connections.concat(offsetConnections);
+                    const classification = results.multiHandedness[loop];
+                    // console.log(results.multiHandedness, loop);
+                    colors.push({
+                        list: offsetConnections.map((unused, i) => i + offset),
+                        color: classification.label,
+                    });
+                }
+                grid2.updateLandmarks(landmarks, connections, colors);
+            } else {
+                grid2.updateLandmarks([]);
+            }
+        }
+
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            },
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+        });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720,
+        });
+        camera.start();
+    </script>
+
+</body>
+
+</html>

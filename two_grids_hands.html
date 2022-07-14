@@ -1,0 +1,301 @@
+<!--NOTE: THIS IS A COPY OF GRID_HANDS.HTML WHEREIN THERE ARE TWO GRIDS
+ONE GRID HAS THE STATIC IMAGE, THE OTHER HAS THE MOVING IMAGES
+THE IDEA IS TO OVERLAY THE TWO GRIDS-->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <title>Grid!</title>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.css"
+        crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.css" crossorigin="anonymous">
+
+
+    <style>
+        .square-box {
+            /* width: 33%; */
+            width: 20%;
+            height: 0;
+            /* padding-top: 33%; */
+            padding-top: 20%;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+
+        .landmark-grid-container {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #99999999;
+        }
+
+        #square-box-2 {
+            position: relative;
+            float: right;
+            /* top: 10%; */
+        }
+
+        /* #landmark-grid-container-1 { 
+            left: 0;
+        }
+
+        #landmark-grid-container-1 { 
+            left: 0;
+        } */
+    </style>
+</head>
+
+<body>
+    <header>
+        <!-- Navigation bar -->
+        <div class="p-5 text-center bg-light">
+            <h1 class="mb-3">View Signs</h1>
+            <h4 class="mb-3">Subheading</h4>
+            <a class="btn btn-primary" href="/practice" role="button">Pratice Sign</a>
+            <a class="btn btn-primary" href="/learn" role="button">Learn Sign</a>
+            <a class="btn btn-primary" href="/" role="button">Home</a>
+        </div>
+    </header>
+
+    <!-- Select a sign to view on the grid-->
+    <div class="col-4">
+        <label for="exampleDataList" class="form-label">Choose a letter to practice</label>
+        <input onchange="get_sign()" class="form-control" list="datalistOptions" id="sign_data"
+            placeholder="Type to search...">
+        <datalist id="datalistOptions">
+            <option value="A">
+            <option value="B">
+            <option value="C">
+            <option value="D">
+            <option value="E">
+            <option value="F">
+            <option value="G">
+            <option value="H">
+            <option value="I">
+            <option value="J">
+            <option value="K">
+            <option value="L">
+            <option value="M">
+            <option value="N">
+            <option value="O">
+            <option value="P">
+            <option value="Q">
+            <option value="R">
+            <option value="S">
+            <option value="T">
+            <option value="U">
+            <option value="V">
+            <option value="W">
+            <option value="X">
+            <option value="Y">
+            <option value="Z">
+        </datalist>
+    </div>
+
+    <!-- Take in input from the camera and display on the grid-->
+    <video hidden class="input_video"></video>
+    <canvas hidden class="output_canvas" width="1280px" height="720px"></canvas>
+    <div>
+        <div class="square-box" id="square-box-1">
+            <!-- static sign -->
+            <div class="landmark-grid-container" id="landmark-grid-container-1"></div>
+        </div>
+        <div class="square-box" id="square-box-2">
+            <!-- moving sign -->
+            <div class="landmark-grid-container" id="landmark-grid-container-2"></div>
+        </div>
+    </div>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.js"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const drawingUtils = window;
+        const controls = window;
+        const controls3d = window;
+        let static_sign = [];
+        let landplaceholder = []
+
+
+        function get_sign() {
+            let sign = document.getElementById("sign_data").value
+            console.log(sign)
+            axios.post('/grid', { 'example_sign': sign }).then(
+                (response) => {
+                    console.log(response)  // take prediction recieved and show it on screen
+                    landplaceholder = response.data.example_datapoints
+                    console.log(landplaceholder)
+                    // prediction = response.data.prediction;
+                    // console.log(prediction)
+
+                },
+                (error) => {
+                    console.log(error)  // if error occurs during prediction, notification pops up
+                }
+
+            );
+        }
+
+        const videoElement = document.getElementsByClassName("input_video")[0];
+        const canvasElement = document.getElementsByClassName("output_canvas")[0];
+        const canvasCtx = canvasElement.getContext("2d");
+
+        const landmarkContainer = document.getElementsByClassName(
+            "landmark-grid-container"
+        )[0];
+
+        const landmarkContainer2 = document.getElementsByClassName(
+            "landmark-grid-container"
+        )[1];
+
+        const grid = new LandmarkGrid(landmarkContainer, { // this grid is for static signs
+            connectionColor: 0xcccccc,
+            definedColors: [
+                { name: "Left", value: 0xffa500 },  // sets hand color
+            ],
+            range: 0.2,
+            fitToGrid: false,
+            labelSuffix: "m",
+            landmarkSize: 2,
+            numCellsPerAxis: 4,
+            showHidden: false,
+            centered: false,
+        });
+
+        const grid2 = new LandmarkGrid(landmarkContainer2, {  // this grid is for moving signs
+            connectionColor: 0xcccccc,
+            definedColors: [
+                { name: "Right", value: 0x00ffff },  // sets hand color
+            ],
+            range: 0.2,
+            fitToGrid: false,
+            labelSuffix: "m",
+            landmarkSize: 2,
+            numCellsPerAxis: 4,
+            showHidden: false,
+            centered: false,
+        });
+
+
+        /// TESTING OUT IF I CAN REMOVE ALL THIS CODE AND STILL HAVE PREDICTIONS SHOW UP
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image,
+                0,
+                0,
+                canvasElement.width,
+                canvasElement.height
+            );
+            // if (results.multiHandLandmarks) {
+            //     for (const landmarks of results.multiHandLandmarks) {
+            //         drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+            //             color: "#FF0000",
+            //             lineWidth: 5,
+            //         });
+            //         drawLandmarks(canvasCtx, landmarks, {
+            //             color: "#FF5400",
+            //             lineWidth: 2,
+            //         });
+            //     }
+            // }
+            // canvasCtx.restore();
+
+
+
+            // NOTE: I took this portion of code out to see if it was necessary--it was meant 
+            // to have a placeholder for the static image if a sign to view wasnt selected
+            // if (results.multiHandWorldLandmarks) {
+            if (landplaceholder.length != 0) {
+                static_sign = [landplaceholder] // this is the datapoints for the static sign the user has selected to view
+                console.log('landplaceholder', landplaceholder)
+
+                const static_landmarks = static_sign.reduce(
+                    (prev, current) => [...prev, ...current],
+                    []
+                );
+
+                const colors = [];
+                let connections = [];
+                for (let loop = 0; loop < static_sign.length; ++loop) {
+                    const offset = loop * HAND_CONNECTIONS.length;
+                    const offsetConnections = HAND_CONNECTIONS.map((connection) => [
+                        connection[0] + offset,
+                        connection[1] + offset,
+                    ]);
+                    connections = connections.concat(offsetConnections);
+                    const classification = results.multiHandedness[loop];
+                    console.log(results.multiHandedness[loop]);
+                    colors.push({
+                        list: offsetConnections.map((unused, i) => i + offset),
+                        // color: loop == 0 ? "Left" : "Right",  // if loop is 0, do left (left is one color), if not then do right (another color)
+                        // this is to set the static hand and the live hand to be two different colors
+                        color: "Left"
+                    });
+                }
+                grid.updateLandmarks(static_landmarks, connections, colors);
+
+            }
+            else {
+                grid.updateLandmarks([]);
+            }
+        }
+
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            },
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+        });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720,
+        });
+        camera.start();
+    </script>
+
+
+</body>
+
+</html>

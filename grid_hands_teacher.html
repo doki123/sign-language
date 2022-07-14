@@ -1,0 +1,266 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.css"
+        crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.css" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d@0.3/control_utils_3d.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        .square-box {
+            width: 33%;
+            height: 0;
+            padding-top: 33%;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+
+        .landmark-grid-container {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #99999999;
+        }
+    </style>
+</head>
+
+<body>
+    <video hidden class="input_video"></video>
+    <canvas class="output_canvas" width="1280px" height="720px"></canvas>
+    <div>
+        <div class="square-box">
+            <div class="landmark-grid-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementsByClassName("input_video")[0];
+        const canvasElement = document.getElementsByClassName("output_canvas")[0];
+        const canvasCtx = canvasElement.getContext("2d");
+
+        const landmarkContainer = document.getElementsByClassName(
+            "landmark-grid-container"
+        )[0];
+
+        const grid = new LandmarkGrid(landmarkContainer, {
+            connectionColor: 0xcccccc,
+            definedColors: [
+                { name: "Left", value: 0xffa500 },
+                { name: "Right", value: 0x00ffff },
+            ],
+            range: 0.2,
+            fitToGrid: false,
+            labelSuffix: "m",
+            landmarkSize: 2,
+            numCellsPerAxis: 4,
+            showHidden: false,
+            centered: false,
+        });
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image,
+                0,
+                0,
+                canvasElement.width,
+                canvasElement.height
+            );
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                        color: "#00FF00",
+                        lineWidth: 5,
+                    });
+                    drawLandmarks(canvasCtx, landmarks, {
+                        color: "#FF0000",
+                        lineWidth: 2,
+                    });
+                }
+            }
+            canvasCtx.restore();
+
+            if (results.multiHandWorldLandmarks) {
+                let l = [
+                    [
+                        {
+                            x: -0.011272374540567398,
+                            y: 0.07655908912420273,
+                            z: 0.04656982421875,
+                        },
+                        {
+                            x: 0.017758168280124664,
+                            y: 0.0563264824450016,
+                            z: 0.033447265625,
+                        },
+                        {
+                            x: 0.04261239245533943,
+                            y: 0.043071724474430084,
+                            z: 0.0216827392578125,
+                        },
+                        {
+                            x: 0.06643955409526825,
+                            y: 0.031271792948246,
+                            z: 0.00008225440979003906,
+                        },
+                        {
+                            x: 0.08050663024187088,
+                            y: 0.022133976221084595,
+                            z: -0.00988006591796875,
+                        },
+                        {
+                            x: 0.02171279489994049,
+                            y: -0.003975452855229378,
+                            z: 0.008544921875,
+                        },
+                        {
+                            x: 0.026661057025194168,
+                            y: -0.035312946885824203,
+                            z: 0.002231597900390625,
+                        },
+                        {
+                            x: 0.0246293842792511,
+                            y: -0.05735643953084946,
+                            z: -0.00542449951171875,
+                        },
+                        {
+                            x: 0.029423201456665993,
+                            y: -0.07669326663017273,
+                            z: -0.02294921875,
+                        },
+                        {
+                            x: 0.0006254914333112538,
+                            y: -0.0037916069850325584,
+                            z: 0.003002166748046875,
+                        },
+                        {
+                            x: -0.005093860439956188,
+                            y: -0.032880354672670364,
+                            z: -0.01312255859375,
+                        },
+                        {
+                            x: -0.008328841999173164,
+                            y: -0.048386652022600174,
+                            z: -0.027496337890625,
+                        },
+                        {
+                            x: -0.015550131909549236,
+                            y: -0.06896615773439407,
+                            z: -0.0311431884765625,
+                        },
+                        {
+                            x: -0.013961994089186192,
+                            y: 0.0018332756590098143,
+                            z: -0.00632476806640625,
+                        },
+                        {
+                            x: -0.017555270344018936,
+                            y: -0.017236636951565742,
+                            z: -0.0182952880859375,
+                        },
+                        {
+                            x: -0.01571223884820938,
+                            y: -0.026847155764698982,
+                            z: -0.028839111328125,
+                        },
+                        {
+                            x: -0.014578888192772865,
+                            y: -0.031085623428225517,
+                            z: -0.039764404296875,
+                        },
+                        {
+                            x: -0.028028255328536034,
+                            y: 0.021412266418337822,
+                            z: -0.0089874267578125,
+                        },
+                        {
+                            x: -0.03184090554714203,
+                            y: 0.00633647944778204,
+                            z: -0.01494598388671875,
+                        },
+                        {
+                            x: -0.033772021532058716,
+                            y: -0.002725066617131233,
+                            z: -0.0207366943359375,
+                        },
+                        {
+                            x: -0.030720636248588562,
+                            y: -0.007097176276147366,
+                            z: -0.0266876220703125,
+                        },
+                    ]
+                    // results.multiHandLandmarks[0]
+                ];
+                if (results.multiHandLandmarks.length > 0) {
+                    l.push(results.multiHandLandmarks[0])
+                } 
+                console.log(results.multiHandWorldLandmarks);
+                // We only get to call updateLandmarks once, so we need to cook the data to
+                // fit. The landmarks just merge, but the connections need to be offset.
+                const landmarks = l.reduce(
+                    (prev, current) => [...prev, ...current],
+                    []
+                );
+                const colors = [];
+                let connections = [];
+                for (let loop = 0; loop < l.length; ++loop) {
+                    const offset = loop * HAND_CONNECTIONS.length;
+                    const offsetConnections = HAND_CONNECTIONS.map((connection) => [
+                        connection[0] + offset,
+                        connection[1] + offset,
+                    ]);
+                    connections = connections.concat(offsetConnections);
+                    const classification = results.multiHandedness[loop];
+                    console.log(results.multiHandedness[loop]);
+                    colors.push({
+                        list: offsetConnections.map((unused, i) => i + offset),
+                        color: "Right",
+                    });
+                }
+                grid.updateLandmarks(landmarks, connections, colors);
+            } else {
+                grid.updateLandmarks([]);
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            },
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+        });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720,
+        });
+        camera.start();
+    </script>
+</body>
+
+</html>
